@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADLIOT File Format</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .container { margin-bottom: 30px; }
+        .tabs { display: flex; border-bottom: 2px solid #ccc; }
+        .tab { padding: 10px 20px; cursor: pointer; border: none; background: #f0f0f0; }
+        .tab.active { background: #007cba; color: white; }
+        .tab-content { display: none; padding: 20px; border: 1px solid #ccc; }
+        .tab-content.active { display: block; }
+        textarea { width: 100%; height: 200px; margin: 10px 0; }
+        button { padding: 10px 20px; margin: 5px; background: #007cba; color: white; border: none; cursor: pointer; }
+        button:hover { background: #005a8b; }
+        .file-input { margin: 10px 0; }
+        code { background: #f4f4f4; padding: 2px 5px; }
+        pre { background: #f4f4f4; padding: 15px; overflow-x: auto; }
+        .success { color: green; margin: 10px 0; }
+        .error { color: red; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>ADLIOT File Format</h1>
+    
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('creator')">File Creator</button>
+        <button class="tab" onclick="showTab('opener')">File Opener</button>
+        <button class="tab" onclick="showTab('docs')">Documentation</button>
+        <button class="tab" onclick="showTab('integration')">Code Integration</button>
+    </div>
+
+    <div id="creator" class="tab-content active">
+        <h2>Create ADLIOT File</h2>
+        <textarea id="contentInput" placeholder="Enter your content here..."></textarea>
+        <br>
+        <button onclick="createFile()">Create .adliot File</button>
+        <div id="createResult"></div>
+    </div>
+
+    <div id="opener" class="tab-content">
+        <h2>Open ADLIOT File</h2>
+        <input type="file" id="fileInput" accept=".adliot" class="file-input">
+        <br>
+        <button onclick="openFile()">Open File</button>
+        <div id="openResult"></div>
+        <textarea id="decodedContent" readonly placeholder="Decoded content will appear here..."></textarea>
+    </div>
+
+    <div id="docs" class="tab-content">
+        <h2>ADLIOT File Format Documentation</h2>
+        
+        <h3>Overview</h3>
+        <p>ADLIOT (.adliot) is a proprietary encrypted text file format designed for secure content storage and transmission.</p>
+        
+        <h3>File Structure</h3>
+        <pre>ADLIOT_V1.0
+[ENCRYPTED_CONTENT]
+[CHECKSUM]</pre>
+        
+        <h3>Features</h3>
+        <ul>
+            <li>Text-based format for easy handling</li>
+            <li>Built-in encryption for content security</li>
+            <li>Checksum verification for data integrity</li>
+            <li>Version control for format evolution</li>
+        </ul>
+        
+        <h3>Encryption Details</h3>
+        <p>The format uses a custom encryption algorithm with the following characteristics:</p>
+        <ul>
+            <li>Character shifting based on position</li>
+            <li>Base64 encoding for safe text representation</li>
+            <li>Checksum validation to prevent tampering</li>
+        </ul>
+        
+        <h3>File Extension</h3>
+        <p>All files must use the <code>.adliot</code> extension.</p>
+    </div>
+
+    <div id="integration" class="tab-content">
+        <h2>Code Integration</h2>
+        
+        <h3>JavaScript Implementation</h3>
+        <p>Use this code to integrate ADLIOT support into your applications:</p>
+        
+        <pre><code>// ADLIOT Encoder/Decoder Library
+class ADLIOTCodec {
+    static encode(content) {
+        const header = "ADLIOT_V1.0\n";
+        const encrypted = this.encrypt(content);
+        const checksum = this.generateChecksum(content);
+        return header + encrypted + "\n" + checksum;
+    }
+    
+    static decode(fileContent) {
+        const lines = fileContent.split('\n');
+        if (lines[0] !== "ADLIOT_V1.0") {
+            throw new Error("Invalid ADLIOT file format");
+        }
+        
+        const encrypted = lines[1];
+        const checksum = lines[2];
+        const decrypted = this.decrypt(encrypted);
+        
+        if (this.generateChecksum(decrypted) !== checksum) {
+            throw new Error("File integrity check failed");
+        }
+        
+        return decrypted;
+    }
+    
+    static encrypt(text) {
+        let encrypted = '';
+        for (let i = 0; i < text.length; i++) {
+            encrypted += String.fromCharCode(text.charCodeAt(i) + (i % 10) + 5);
+        }
+        return btoa(encrypted);
+    }
+    
+    static decrypt(encrypted) {
+        const decoded = atob(encrypted);
+        let decrypted = '';
+        for (let i = 0; i < decoded.length; i++) {
+            decrypted += String.fromCharCode(decoded.charCodeAt(i) - (i % 10) - 5);
+        }
+        return decrypted;
+    }
+    
+    static generateChecksum(content) {
+        let hash = 0;
+        for (let i = 0; i < content.length; i++) {
+            const char = content.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return Math.abs(hash).toString(16);
+    }
+}</code></pre>
+        
+        <h3>Usage Examples</h3>
+        <pre><code>// Create an ADLIOT file
+const content = "Hello, World!";
+const encoded = ADLIOTCodec.encode(content);
+
+// Save to file (browser)
+const blob = new Blob([encoded], { type: 'text/plain' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = 'myfile.adliot';
+a.click();
+
+// Read an ADLIOT file
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const decoded = ADLIOTCodec.decode(e.target.result);
+            console.log('Decoded content:', decoded);
+        } catch (error) {
+            console.error('Error:', error.message);
+        }
+    };
+    reader.readAsText(file);
+});</code></pre>
+        
+        <h3>Python Implementation</h3>
+        <pre><code>import base64
+import hashlib
+
+class ADLIOTCodec:
+    @staticmethod
+    def encode(content):
+        header = "ADLIOT_V1.0\n"
+        encrypted = ADLIOTCodec.encrypt(content)
+        checksum = ADLIOTCodec.generate_checksum(content)
+        return header + encrypted + "\n" + checksum
+    
+    @staticmethod
+    def decode(file_content):
+        lines = file_content.split('\n')
+        if lines[0] != "ADLIOT_V1.0":
+            raise ValueError("Invalid ADLIOT file format")
+        
+        encrypted = lines[1]
+        checksum = lines[2]
+        decrypted = ADLIOTCodec.decrypt(encrypted)
+        
+        if ADLIOTCodec.generate_checksum(decrypted) != checksum:
+            raise ValueError("File integrity check failed")
+        
+        return decrypted
+    
+    @staticmethod
+    def encrypt(text):
+        encrypted = ''.join(chr(ord(char) + (i % 10) + 5) for i, char in enumerate(text))
+        return base64.b64encode(encrypted.encode()).decode()
+    
+    @staticmethod
+    def decrypt(encrypted):
+        decoded = base64.b64decode(encrypted).decode()
+        return ''.join(chr(ord(char) - (i % 10) - 5) for i, char in enumerate(decoded))
+    
+    @staticmethod
+    def generate_checksum(content):
+        return hashlib.md5(content.encode()).hexdigest()[:8]</code></pre>
+    </div>
+
+    <script src="adliot.js"></script>
+</body>
+</html>
