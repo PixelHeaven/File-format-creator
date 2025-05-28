@@ -12,7 +12,7 @@
         .tab.active { background: #007cba; color: white; }
         .tab-content { display: none; padding: 20px; border: 1px solid #ccc; }
         .tab-content.active { display: block; }
-        textarea { width: 100%; height: 200px; margin: 10px 0; }
+        textarea { width: 100%; height: 200px; margin: 10px 0; box-sizing: border-box; }
         button { padding: 10px 20px; margin: 5px; background: #007cba; color: white; border: none; cursor: pointer; }
         button:hover { background: #005a8b; }
         .file-input { margin: 10px 0; }
@@ -21,6 +21,7 @@
         .success { color: green; margin: 10px 0; }
         .error { color: red; margin: 10px 0; }
         .info-box { background: #e8f4f8; padding: 15px; margin: 10px 0; border-left: 4px solid #007cba; }
+        .debug { background: #fff3cd; padding: 10px; margin: 10px 0; border: 1px solid #ffeaa7; }
     </style>
 </head>
 <body>
@@ -35,19 +36,24 @@
         </ol>
     </div>
     
+    <!-- Debug section -->
+    <div id="debugInfo" class="debug">
+        <strong>🔧 Debug Info:</strong> <span id="debugText">Loading...</span>
+    </div>
+    
     <div class="tabs">
         <button class="tab active" onclick="showTab('creator')">File Creator</button>
         <button class="tab" onclick="showTab('opener')">File Opener</button>
         <button class="tab" onclick="showTab('test')">Test & Demo</button>
         <button class="tab" onclick="showTab('docs')">Documentation</button>
-        <button class="tab" onclick="showTab('integration')">Code Integration</button>
     </div>
 
     <div id="creator" class="tab-content active">
         <h2>Create ADLIOT File</h2>
         <textarea id="contentInput" placeholder="Enter your content here...">This is a sample text that will be encrypted into an ADLIOT file!</textarea>
         <br>
-        <button onclick="createFile()">Create .adliot File</button>
+        <button onclick="createFile()" id="createBtn">Create .adliot File</button>
+        <button onclick="testBasicFunction()">Test Button (Debug)</button>
         <div id="createResult"></div>
     </div>
 
@@ -66,12 +72,8 @@
             <strong>🧪 Quick Test:</strong> This will create a test file and immediately try to decode it to verify everything works.
         </div>
         <button onclick="runFullTest()">Run Full Test</button>
-        <div id="testResult"></div>
-        
-        <h3>Sample Files</h3>
         <button onclick="createSampleFile('hello')">Create "Hello World" Sample</button>
-        <button onclick="createSampleFile('json')">Create JSON Sample</button>
-        <button onclick="createSampleFile('code')">Create Code Sample</button>
+        <div id="testResult"></div>
     </div>
 
     <div id="docs" class="tab-content">
@@ -92,125 +94,266 @@
             <li>Checksum verification for data integrity</li>
             <li>Version control for format evolution</li>
         </ul>
-        
-        <h3>Encryption Details</h3>
-        <p>The format uses a custom encryption algorithm with the following characteristics:</p>
-        <ul>
-            <li>Character shifting based on position</li>
-            <li>Base64 encoding for safe text representation</li>
-            <li>Checksum validation to prevent tampering</li>
-        </ul>
-        
-        <h3>File Extension</h3>
-        <p>All files must use the <code>.adliot</code> extension.</p>
-        
-        <h3>Browser Compatibility</h3>
-        <p>Works in all modern browsers that support:</p>
-        <ul>
-            <li>File API</li>
-            <li>Blob objects</li>
-            <li>URL.createObjectURL()</li>
-        </ul>
-    </div>
-
-    <div id="integration" class="tab-content">
-        <h2>Code Integration</h2>
-        
-        <h3>JavaScript Implementation</h3>
-        <p>Use this code to integrate ADLIOT support into your applications:</p>
-        
-        <pre><code>// ADLIOT Encoder/Decoder Library
-class ADLIOTCodec {
-    static encode(content) {
-        const header = "ADLIOT_V1.0\n";
-        const encrypted = this.encrypt(content);
-        const checksum = this.generateChecksum(content);
-        return header + encrypted + "\n" + checksum;
-    }
-    
-    static decode(fileContent) {
-        const lines = fileContent.split('\n');
-        if (lines[0] !== "ADLIOT_V1.0") {
-            throw new Error("Invalid ADLIOT file format");
-        }
-        
-        const encrypted = lines[1];
-        const checksum = lines[2];
-        const decrypted = this.decrypt(encrypted);
-        
-        if (this.generateChecksum(decrypted) !== checksum) {
-            throw new Error("File integrity check failed");
-        }
-        
-        return decrypted;
-    }
-    
-    static encrypt(text) {
-        let encrypted = '';
-        for (let i = 0; i < text.length; i++) {
-            encrypted += String.fromCharCode(text.charCodeAt(i) + (i % 10) + 5);
-        }
-        return btoa(encrypted);
-    }
-    
-    static decrypt(encrypted) {
-        const decoded = atob(encrypted);
-        let decrypted = '';
-        for (let i = 0; i < decoded.length; i++) {
-            decrypted += String.fromCharCode(decoded.charCodeAt(i) - (i % 10) - 5);
-        }
-        return decrypted;
-    }
-    
-    static generateChecksum(content) {
-        let hash = 0;
-        for (let i = 0; i < content.length; i++) {
-            const char = content.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
-        }
-        return Math.abs(hash).toString(16);
-    }
-}</code></pre>
-        
-        <h3>Usage Examples</h3>
-        <pre><code>// Create an ADLIOT file
-const content = "Hello, World!";
-const encoded = ADLIOTCodec.encode(content);
-
-// Save to file (browser)
-const blob = new Blob([encoded], { type: 'text/plain' });
-const url = URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.href = url;
-a.download = 'myfile.adliot';
-a.click();
-
-// Read an ADLIOT file
-const fileInput = document.getElementById('fileInput');
-fileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const decoded = ADLIOTCodec.decode(e.target.result);
-            console.log('Decoded content:', decoded);
-        } catch (error) {
-            console.error('Error:', error.message);
-        }
-    };
-    reader.readAsText(file);
-});</code></pre>
     </div>
 
     <script>
-        // Add test functions to the existing JavaScript
-        function runFullTest() {
-            const resultDiv = document.getElementById('testResult');
-            resultDiv.innerHTML = '<div style="color: blue;">🧪 Running tests...</div>';
+        // Debug function to test if JavaScript is working
+        function testBasicFunction() {
+            alert("JavaScript is working! Button clicks are being detected.");
+            document.getElementById('createResult').innerHTML = '<div class="success">✅ JavaScript test successful!</div>';
+        }
+
+        // Update debug info
+        function updateDebug(message) {
+            document.getElementById('debugText').textContent = message;
+            console.log('DEBUG:', message);
+        }
+
+        // ADLIOT Codec Implementation
+        class ADLIOTCodec {
+            static encode(content) {
+                try {
+                    const header = "ADLIOT_V1.0\n";
+                    const encrypted = this.encrypt(content);
+                    const checksum = this.generateChecksum(content);
+                    return header + encrypted + "\n" + checksum;
+                } catch (error) {
+                    updateDebug('Error in encode: ' + error.message);
+                    throw error;
+                }
+            }
+            
+            static decode(fileContent) {
+                try {
+                    const lines = fileContent.split('\n');
+                    if (lines[0] !== "ADLIOT_V1.0") {
+                        throw new Error("Invalid ADLIOT file format");
+                    }
+                    
+                    const encrypted = lines[1];
+                    const checksum = lines[2];
+                    const decrypted = this.decrypt(encrypted);
+                    
+                    if (this.generateChecksum(decrypted) !== checksum) {
+                        throw new Error("File integrity check failed");
+                    }
+                    
+                    return decrypted;
+                } catch (error) {
+                    updateDebug('Error in decode: ' + error.message);
+                    throw error;
+                }
+            }
+            
+            static encrypt(text) {
+                let encrypted = '';
+                for (let i = 0; i < text.length; i++) {
+                    encrypted += String.fromCharCode(text.charCodeAt(i) + (i % 10) + 5);
+                }
+                return btoa(encrypted);
+            }
+            
+            static decrypt(encrypted) {
+                const decoded = atob(encrypted);
+                let decrypted = '';
+                for (let i = 0; i < decoded.length; i++) {
+                    decrypted += String.fromCharCode(decoded.charCodeAt(i) - (i % 10) - 5);
+                }
+                return decrypted;
+            }
+            
+            static generateChecksum(content) {
+                let hash = 0;
+                for (let i = 0; i < content.length; i++) {
+                    const char = content.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return Math.abs(hash).toString(16);
+            }
+        }
+
+        // UI Functions
+        function showTab(tabName) {
+            try {
+                // Hide all tab contents
+                const contents = document.querySelectorAll('.tab-content');
+                contents.forEach(content => content.classList.remove('active'));
+                
+                // Remove active class from all tabs
+                const tabs = document.querySelectorAll('.tab');
+                tabs.forEach(tab => tab.classList.remove('active'));
+                
+                // Show selected tab content
+                document.getElementById(tabName).classList.add('active');
+                
+                // Add active class to clicked tab
+                event.target.classList.add('active');
+                
+                updateDebug('Switched to tab: ' + tabName);
+            } catch (error) {
+                updateDebug('Error in showTab: ' + error.message);
+            }
+        }
+
+        function createFile() {
+            updateDebug('createFile() function called');
             
             try {
-                // Test 1: Basic encoding/decoding
+                const content = document.getElementById('contentInput').value;
+                const resultDiv = document.getElementById('createResult');
+                
+                updateDebug('Content length: ' + content.length);
+                
+                if (!content.trim()) {
+                    resultDiv.innerHTML = '<div class="error">Please enter some content to create a file.</div>';
+                    updateDebug('No content provided');
+                    return;
+                }
+                
+                // Show processing message
+                resultDiv.innerHTML = '<div style="color: blue;">Creating file...</div>';
+                updateDebug('Starting file creation process');
+                
+                const encoded = ADLIOTCodec.encode(content);
+                updateDebug('Content encoded successfully, length: ' + encoded.length);
+                
+                // Create filename with timestamp
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+                const filename = `adliot-file-${timestamp}.adliot`;
+                updateDebug('Filename: ' + filename);
+                
+                // Check if browser supports download
+                if (!window.URL || !window.URL.createObjectURL) {
+                    resultDiv.innerHTML = '<div class="error">❌ Your browser does not support file downloads. Please use Chrome, Firefox, or Edge.</div>';
+                    updateDebug('Browser does not support downloads');
+                    return;
+                }
+                
+                // Create and download file
+                const blob = new Blob([encoded], { type: 'text/plain' });
+                updateDebug('Blob created, size: ' + blob.size);
+                
+                const url = URL.createObjectURL(blob);
+                updateDebug('Object URL created: ' + url.substring(0, 50) + '...');
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                
+                updateDebug('Download link created, triggering click');
+                
+                // Trigger download
+                a.click();
+                
+                updateDebug('Download triggered');
+                
+                // Clean up
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    updateDebug('Cleanup completed');
+                }, 1000);
+                
+                const preview = encoded.length > 100 ? encoded.substring(0, 100) + '...' : encoded;
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ ADLIOT file created successfully!</div>
+                    <div><strong>Filename:</strong> ${filename}</div>
+                    <div><strong>File size:</strong> ${encoded.length} bytes</div>
+                    <div><strong>Preview:</strong></div>
+                    <pre style="background: #e8f4f8; padding: 10px; font-size: 12px; max-height: 100px; overflow-y: auto;">${preview}</pre>
+                    <div style="margin-top: 10px;">
+                        <button onclick="downloadAgain('${filename}', \`${encoded.replace(/`/g, '\\`')}\`)">Download Again</button>
+                    </div>
+                `;
+                
+                updateDebug('File creation completed successfully');
+                
+            } catch (error) {
+                updateDebug('Error in createFile: ' + error.message);
+                document.getElementById('createResult').innerHTML = `<div class="error">❌ Error creating file: ${error.message}</div>`;
+            }
+        }
+
+        function downloadAgain(filename, content) {
+            try {
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                updateDebug('File downloaded again: ' + filename);
+            } catch (error) {
+                updateDebug('Error in downloadAgain: ' + error.message);
+            }
+        }
+
+        function openFile() {
+            try {
+                const fileInput = document.getElementById('fileInput');
+                const resultDiv = document.getElementById('openResult');
+                const decodedTextarea = document.getElementById('decodedContent');
+                
+                if (!fileInput.files.length) {
+                    resultDiv.innerHTML = '<div class="error">❌ Please select a file to open.</div>';
+                    return;
+                }
+                
+                const file = fileInput.files[0];
+                
+                if (!file.name.endsWith('.adliot')) {
+                    resultDiv.innerHTML = '<div class="error">❌ Please select a valid .adliot file.</div>';
+                    return;
+                }
+                
+                // Show processing message
+                resultDiv.innerHTML = '<div style="color: blue;">📖 Reading file...</div>';
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const fileContent = e.target.result;
+                        const decoded = ADLIOTCodec.decode(fileContent);
+                        decodedTextarea.value = decoded;
+                        
+                        resultDiv.innerHTML = `
+                            <div class="success">✅ File opened and decoded successfully!</div>
+                            <div><strong>Filename:</strong> ${file.name}</div>
+                            <div><strong>File size:</strong> ${file.size} bytes</div>
+                            <div><strong>Decoded content length:</strong> ${decoded.length} characters</div>
+                        `;
+                    } catch (error) {
+                        resultDiv.innerHTML = `<div class="error">❌ Error opening file: ${error.message}</div>`;
+                        decodedTextarea.value = '';
+                    }
+                };
+                
+                reader.onerror = function() {
+                    resultDiv.innerHTML = '<div class="error">❌ Error reading file.</div>';
+                };
+                
+                reader.readAsText(file);
+            } catch (error) {
+                updateDebug('Error in openFile: ' + error.message);
+            }
+        }
+
+        function runFullTest() {
+            try {
+                const resultDiv = document.getElementById('testResult');
+                resultDiv.innerHTML = '<div style="color: blue;">🧪 Running tests...</div>';
+                
+                // Test basic encoding/decoding
                 const testContent = "Hello, this is a test of the ADLIOT file format! 🚀";
                 const encoded = ADLIOTCodec.encode(testContent);
                 const decoded = ADLIOTCodec.decode(encoded);
@@ -218,33 +361,9 @@ fileInput.addEventListener('change', (e) => {
                 let results = '<h3>Test Results:</h3>';
                 
                 if (decoded === testContent) {
-                    results += '<div class="success">✅ Test 1: Basic encoding/decoding - PASSED</div>';
+                    results += '<div class="success">✅ Test: Basic encoding/decoding - PASSED</div>';
                 } else {
-                    results += '<div class="error">❌ Test 1: Basic encoding/decoding - FAILED</div>';
-                }
-                
-                // Test 2: Special characters
-                const specialContent = "Special chars: !@#$%^&*()_+{}|:<>?[]\\;'\".,/`~";
-                const encodedSpecial = ADLIOTCodec.encode(specialContent);
-                const decodedSpecial = ADLIOTCodec.decode(encodedSpecial);
-                
-                if (decodedSpecial === specialContent) {
-                    results += '<div class="success">✅ Test 2: Special characters - PASSED</div>';
-                } else {
-                    results += '<div class="error">❌ Test 2: Special characters - FAILED</div>';
-                }
-                
-                // Test 3: Empty content
-                try {
-                    const emptyEncoded = ADLIOTCodec.encode("");
-                    const emptyDecoded = ADLIOTCodec.decode(emptyEncoded);
-                    if (emptyDecoded === "") {
-                        results += '<div class="success">✅ Test 3: Empty content - PASSED</div>';
-                    } else {
-                        results += '<div class="error">❌ Test 3: Empty content - FAILED</div>';
-                    }
-                } catch (e) {
-                    results += '<div class="error">❌ Test 3: Empty content - FAILED (Exception)</div>';
+                    results += '<div class="error">❌ Test: Basic encoding/decoding - FAILED</div>';
                 }
                 
                 // Show file structure
@@ -252,60 +371,74 @@ fileInput.addEventListener('change', (e) => {
                 results += `<pre style="background: #f0f0f0; padding: 10px; font-size: 12px;">${encoded}</pre>`;
                 
                 resultDiv.innerHTML = results;
+                updateDebug('Full test completed');
                 
             } catch (error) {
-                resultDiv.innerHTML = `<div class="error">❌ Test failed with error: ${error.message}</div>`;
+                document.getElementById('testResult').innerHTML = `<div class="error">❌ Test failed with error: ${error.message}</div>`;
+                updateDebug('Test failed: ' + error.message);
             }
         }
         
         function createSampleFile(type) {
-            let content = '';
-            let filename = '';
-            
-            switch(type) {
-                case 'hello':
-                    content = 'Hello, World!\nThis is a sample ADLIOT file.\nCreated on: ' + new Date().toLocaleString();
-                    filename = 'hello-world-sample.adliot';
-                    break;
-                case 'json':
-                    content = JSON.stringify({
-                        "name": "Sample Data",
-                        "version": "1.0",
-                        "data": ["item1", "item2", "item3"],
-                        "timestamp": new Date().toISOString()
-                    }, null, 2);
-                    filename = 'json-sample.adliot';
-                    break;
-                case 'code':
-                    content = `function greet(name) {
-    console.log("Hello, " + name + "!");
-}
-
-// Sample JavaScript code
-const users = ["Alice", "Bob", "Charlie"];
-users.forEach(user => greet(user));
-
-/* This code is stored in an encrypted ADLIOT file */`;
-                    filename = 'code-sample.adliot';
-                    break;
+            try {
+                let content = 'Hello, World!\nThis is a sample ADLIOT file.\nCreated on: ' + new Date().toLocaleString();
+                let filename = 'hello-world-sample.adliot';
+                
+                const encoded = ADLIOTCodec.encode(content);
+                const blob = new Blob([encoded], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                
+                document.getElementById('testResult').innerHTML = `<div class="success">✅ Sample file "${filename}" created and downloaded!</div>`;
+                updateDebug('Sample file created: ' + filename);
+            } catch (error) {
+                updateDebug('Error creating sample file: ' + error.message);
             }
-            
-            const encoded = ADLIOTCodec.encode(content);
-            const blob = new Blob([encoded], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
-            
-            document.getElementById('testResult').innerHTML = `<div class="success">✅ Sample file "${filename}" created and downloaded!</div>`;
         }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                updateDebug('Page loaded successfully');
+                
+                // Test the codec
+                const testContent = "test";
+                const encoded = ADLIOTCodec.encode(testContent);
+                const decoded = ADLIOTCodec.decode(encoded);
+                
+                if (decoded === testContent) {
+                    updateDebug('ADLIOT codec working correctly');
+                } else {
+                    updateDebug('ADLIOT codec test failed');
+                }
+                
+                // Check browser capabilities
+                if (window.URL && window.URL.createObjectURL) {
+                    updateDebug('Browser supports file downloads - Ready!');
+                } else {
+                    updateDebug('Browser does NOT support file downloads');
+                }
+                
+            } catch (error) {
+                updateDebug('Initialization error: ' + error.message);
+            }
+        });
+
+        // Global error handler
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            updateDebug('Global error: ' + msg + ' at line ' + lineNo);
+            return false;
+        };
     </script>
-    <script src="adliot.js"></script>
+</body>
+</html>
