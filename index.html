@@ -20,21 +20,32 @@
         pre { background: #f4f4f4; padding: 15px; overflow-x: auto; }
         .success { color: green; margin: 10px 0; }
         .error { color: red; margin: 10px 0; }
+        .info-box { background: #e8f4f8; padding: 15px; margin: 10px 0; border-left: 4px solid #007cba; }
     </style>
 </head>
 <body>
     <h1>ADLIOT File Format</h1>
     
+    <div class="info-box">
+        <strong>📋 How to use:</strong>
+        <ol>
+            <li><strong>Create files:</strong> Enter text and click "Create .adliot File" - your browser will download the encrypted file</li>
+            <li><strong>Open files:</strong> Use "Choose File" to select a .adliot file, then click "Open File" to decrypt it</li>
+            <li><strong>Check downloads:</strong> Look in your browser's download folder (usually Downloads folder)</li>
+        </ol>
+    </div>
+    
     <div class="tabs">
         <button class="tab active" onclick="showTab('creator')">File Creator</button>
         <button class="tab" onclick="showTab('opener')">File Opener</button>
+        <button class="tab" onclick="showTab('test')">Test & Demo</button>
         <button class="tab" onclick="showTab('docs')">Documentation</button>
         <button class="tab" onclick="showTab('integration')">Code Integration</button>
     </div>
 
     <div id="creator" class="tab-content active">
         <h2>Create ADLIOT File</h2>
-        <textarea id="contentInput" placeholder="Enter your content here..."></textarea>
+        <textarea id="contentInput" placeholder="Enter your content here...">This is a sample text that will be encrypted into an ADLIOT file!</textarea>
         <br>
         <button onclick="createFile()">Create .adliot File</button>
         <div id="createResult"></div>
@@ -47,6 +58,20 @@
         <button onclick="openFile()">Open File</button>
         <div id="openResult"></div>
         <textarea id="decodedContent" readonly placeholder="Decoded content will appear here..."></textarea>
+    </div>
+
+    <div id="test" class="tab-content">
+        <h2>Test & Demo</h2>
+        <div class="info-box">
+            <strong>🧪 Quick Test:</strong> This will create a test file and immediately try to decode it to verify everything works.
+        </div>
+        <button onclick="runFullTest()">Run Full Test</button>
+        <div id="testResult"></div>
+        
+        <h3>Sample Files</h3>
+        <button onclick="createSampleFile('hello')">Create "Hello World" Sample</button>
+        <button onclick="createSampleFile('json')">Create JSON Sample</button>
+        <button onclick="createSampleFile('code')">Create Code Sample</button>
     </div>
 
     <div id="docs" class="tab-content">
@@ -78,6 +103,14 @@
         
         <h3>File Extension</h3>
         <p>All files must use the <code>.adliot</code> extension.</p>
+        
+        <h3>Browser Compatibility</h3>
+        <p>Works in all modern browsers that support:</p>
+        <ul>
+            <li>File API</li>
+            <li>Blob objects</li>
+            <li>URL.createObjectURL()</li>
+        </ul>
     </div>
 
     <div id="integration" class="tab-content">
@@ -168,49 +201,111 @@ fileInput.addEventListener('change', (e) => {
     };
     reader.readAsText(file);
 });</code></pre>
-        
-        <h3>Python Implementation</h3>
-        <pre><code>import base64
-import hashlib
-
-class ADLIOTCodec:
-    @staticmethod
-    def encode(content):
-        header = "ADLIOT_V1.0\n"
-        encrypted = ADLIOTCodec.encrypt(content)
-        checksum = ADLIOTCodec.generate_checksum(content)
-        return header + encrypted + "\n" + checksum
-    
-    @staticmethod
-    def decode(file_content):
-        lines = file_content.split('\n')
-        if lines[0] != "ADLIOT_V1.0":
-            raise ValueError("Invalid ADLIOT file format")
-        
-        encrypted = lines[1]
-        checksum = lines[2]
-        decrypted = ADLIOTCodec.decrypt(encrypted)
-        
-        if ADLIOTCodec.generate_checksum(decrypted) != checksum:
-            raise ValueError("File integrity check failed")
-        
-        return decrypted
-    
-    @staticmethod
-    def encrypt(text):
-        encrypted = ''.join(chr(ord(char) + (i % 10) + 5) for i, char in enumerate(text))
-        return base64.b64encode(encrypted.encode()).decode()
-    
-    @staticmethod
-    def decrypt(encrypted):
-        decoded = base64.b64decode(encrypted).decode()
-        return ''.join(chr(ord(char) - (i % 10) - 5) for i, char in enumerate(decoded))
-    
-    @staticmethod
-    def generate_checksum(content):
-        return hashlib.md5(content.encode()).hexdigest()[:8]</code></pre>
     </div>
 
+    <script>
+        // Add test functions to the existing JavaScript
+        function runFullTest() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = '<div style="color: blue;">🧪 Running tests...</div>';
+            
+            try {
+                // Test 1: Basic encoding/decoding
+                const testContent = "Hello, this is a test of the ADLIOT file format! 🚀";
+                const encoded = ADLIOTCodec.encode(testContent);
+                const decoded = ADLIOTCodec.decode(encoded);
+                
+                let results = '<h3>Test Results:</h3>';
+                
+                if (decoded === testContent) {
+                    results += '<div class="success">✅ Test 1: Basic encoding/decoding - PASSED</div>';
+                } else {
+                    results += '<div class="error">❌ Test 1: Basic encoding/decoding - FAILED</div>';
+                }
+                
+                // Test 2: Special characters
+                const specialContent = "Special chars: !@#$%^&*()_+{}|:<>?[]\\;'\".,/`~";
+                const encodedSpecial = ADLIOTCodec.encode(specialContent);
+                const decodedSpecial = ADLIOTCodec.decode(encodedSpecial);
+                
+                if (decodedSpecial === specialContent) {
+                    results += '<div class="success">✅ Test 2: Special characters - PASSED</div>';
+                } else {
+                    results += '<div class="error">❌ Test 2: Special characters - FAILED</div>';
+                }
+                
+                // Test 3: Empty content
+                try {
+                    const emptyEncoded = ADLIOTCodec.encode("");
+                    const emptyDecoded = ADLIOTCodec.decode(emptyEncoded);
+                    if (emptyDecoded === "") {
+                        results += '<div class="success">✅ Test 3: Empty content - PASSED</div>';
+                    } else {
+                        results += '<div class="error">❌ Test 3: Empty content - FAILED</div>';
+                    }
+                } catch (e) {
+                    results += '<div class="error">❌ Test 3: Empty content - FAILED (Exception)</div>';
+                }
+                
+                // Show file structure
+                results += '<h4>Sample File Structure:</h4>';
+                results += `<pre style="background: #f0f0f0; padding: 10px; font-size: 12px;">${encoded}</pre>`;
+                
+                resultDiv.innerHTML = results;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Test failed with error: ${error.message}</div>`;
+            }
+        }
+        
+        function createSampleFile(type) {
+            let content = '';
+            let filename = '';
+            
+            switch(type) {
+                case 'hello':
+                    content = 'Hello, World!\nThis is a sample ADLIOT file.\nCreated on: ' + new Date().toLocaleString();
+                    filename = 'hello-world-sample.adliot';
+                    break;
+                case 'json':
+                    content = JSON.stringify({
+                        "name": "Sample Data",
+                        "version": "1.0",
+                        "data": ["item1", "item2", "item3"],
+                        "timestamp": new Date().toISOString()
+                    }, null, 2);
+                    filename = 'json-sample.adliot';
+                    break;
+                case 'code':
+                    content = `function greet(name) {
+    console.log("Hello, " + name + "!");
+}
+
+// Sample JavaScript code
+const users = ["Alice", "Bob", "Charlie"];
+users.forEach(user => greet(user));
+
+/* This code is stored in an encrypted ADLIOT file */`;
+                    filename = 'code-sample.adliot';
+                    break;
+            }
+            
+            const encoded = ADLIOTCodec.encode(content);
+            const blob = new Blob([encoded], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+            
+            document.getElementById('testResult').innerHTML = `<div class="success">✅ Sample file "${filename}" created and downloaded!</div>`;
+        }
+    </script>
     <script src="adliot.js"></script>
-</body>
-</html>
